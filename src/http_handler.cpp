@@ -21,6 +21,7 @@ static constexpr auto MAX_REQUEST_SIZE = 4096;
 
 static constexpr auto HEADER_BUF_SIZE = 64;
 static constexpr const char EXPECTED_METHOD[] = "GET ";
+static constexpr const char EXPECTED_PATH[] = "/ ";
 static constexpr const char EXPECTED_PROTOCOL[] = "HTTP/1.1\r\n";
 static constexpr const char EXPECTED_HEADER_UPGRADE[] = "Upgrade: websocket";
 static constexpr const char EXPECTED_HEADER_CONNECTION[] = "Connection: Upgrade";
@@ -36,6 +37,14 @@ static constexpr const char BAD_REQUEST_RESPONSE[] =
   "HTTP/1.1 400 Bad Request\r\n"
   "Connection: close\r\n"
   "Sec-WebSocket-Version: 13\r\n\r\n";
+
+static constexpr const char NOT_FOUND_RESPONSE[] =
+  "HTTP/1.1 404 Not Found\r\n"
+  "Connection: close\r\n\r\n";
+
+static constexpr const char BAD_METHOD_RESPONSE[] =
+  "HTTP/1.1 405 Method Not Allowed\r\n"
+  "Connection: close\r\n\r\n";
 
 static constexpr const char HTML_RESPONSE_START[] =
   "HTTP/1.1 200 OK\r\n"
@@ -63,10 +72,10 @@ bool HTTPHandler::process(struct pbuf* pb) {
 
   for (size_t i = 0; i < pb->tot_len; i++) {
     char c = pbuf_get_at(pb, i);
-    bool sent_html;
-    if (!process(c, &sent_html)) {
-      if (!sent_html) {
-        send(BAD_REQUEST_RESPONSE, strlen(BAD_REQUEST_RESPONSE));
+    bool sent_response;
+    if (!process(c, &sent_response)) {
+      if (!sent_response) {
+        sendString(BAD_REQUEST_RESPONSE);
       }
       is_closing = true;
       return false;
@@ -117,7 +126,7 @@ bool HTTPHandler::sendUpgradeResponse(uint8_t* key_accept, size_t key_accept_len
   return true;
 }
 
-bool HTTPHandler::attemptUpgrade(bool* sent_html) {
+bool HTTPHandler::attemptUpgrade(bool* sent_response) {
   DEBUG("%s %s %s '%s'",
     has_upgrade_header ? "has_upgrade_header" : "",
     has_connection_header ? "has_connection_header" : "",
@@ -126,7 +135,7 @@ bool HTTPHandler::attemptUpgrade(bool* sent_html) {
   if (!has_upgrade_header && !has_connection_header && !has_ws_version_header) {
     // Not a WebSocket request, serve static HTML and close connection
     sendHTML();
-    *sent_html = true;
+    *sent_response = true;
     return false;
   }
 
@@ -182,19 +191,25 @@ bool HTTPHandler::processHeader(const char* header) {
   return true;
 }
 
-bool HTTPHandler::process(char c, bool *sent_html) {
+bool HTTPHandler::process(char c, bool *sent_response) {
   if (++request_bytes > MAX_REQUEST_SIZE) {
     return false;
   }
 
   switch (current_part) {
   case METHOD:
-    return matchAndThen(c, EXPECTED_METHOD, PATH);
+    if (!matchAndThen(c, EXPECTED_METHOD, PATH)) {
+      sendString(BAD_METHOD_RESPONSE);
+      *sent_response = true;
+      return false;
+    }
+    return true;
 
   case PATH:
-    if (c == ' ') {
-      current_part = PROTOCOL;
-      current_index = 0;
+    if (!matchAndThen(c, EXPECTED_PATH, PROTOCOL)) {
+      sendString(NOT_FOUND_RESPONSE);
+      *sent_response = true;
+      return false;
     }
     return true;
 
@@ -216,7 +231,7 @@ bool HTTPHandler::process(char c, bool *sent_html) {
       return false;
     }
     if (!current_header[0]) {
-      is_upgraded = attemptUpgrade(sent_html);
+      is_upgraded = attemptUpgrade(sent_response);
       return is_upgraded;
     }
     bool ok = processHeader(current_header);
