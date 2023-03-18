@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript">
+    const sock = new WebSocket(`ws://${window.location.hostname}/`);
+    sock.onopen = () => {
+      console.log('onopen');
+    };
+    sock.onclose = () => {
+      console.log('onclose');
+    };
+    sock.onmessage = (msg) => {
+      console.log('onmessage', msg);
+    };
+    console.log('connecting');
+  </script>
+</head>
+<body>
+  <p>WebSocket server example</p>
+</body>
+</html>
