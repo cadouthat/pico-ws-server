@@ -1,6 +1,9 @@
 # pico-ws-server
 WebSockets server implementation for Raspberry Pi Pico W on top of raw lwIP
 
+## Security
+This server does not currently support HTTPS/WSS
+
 ## HTTP Notes
 This does not aim to be a general-purpose HTTP server, and only includes minimal HTTP support for the WebSocket handshake. Only `GET / HTTP/1.1` requests are allowed, all other requests will return status `400`/`404`/`405`.
 
