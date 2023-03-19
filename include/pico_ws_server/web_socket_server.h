@@ -21,6 +21,8 @@ class WebSocketServer {
   void setConnectCallback(ConnectCallback cb);
   void setMessageCallback(MessageCallback cb);
   void setCloseCallback(CloseCallback cb);
+  void setCallbackExtra(void* arg);
+  void* getCallbackExtra();
 
   // Note: methods below must be called from lwIP context. It is safe to call them from callback handlers
   bool startListening(uint16_t port);
@@ -31,6 +33,7 @@ class WebSocketServer {
 
  private:
   std::unique_ptr<WebSocketServerInternal> internal;
+  void* callback_extra = nullptr;
 };
 
 #endif

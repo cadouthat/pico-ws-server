@@ -18,6 +18,12 @@ void WebSocketServer::setMessageCallback(MessageCallback cb) {
 void WebSocketServer::setCloseCallback(CloseCallback cb) {
   internal->setCloseCallback(cb);
 }
+void WebSocketServer::setCallbackExtra(void* arg) {
+  callback_extra = arg;
+}
+void* WebSocketServer::getCallbackExtra() {
+  return callback_extra;
+}
 
 bool WebSocketServer::startListening(uint16_t port) {
   return internal->startListening(port);
