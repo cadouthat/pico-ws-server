@@ -11,8 +11,8 @@
 #include "client_connection.h"
 #include "debug.h"
 
-#ifndef PICO_WS_SERVER_STATIC_HTML
-#define PICO_WS_SERVER_STATIC_HTML ""
+#ifndef PICO_WS_SERVER_STATIC_HTML_HEX
+#define PICO_WS_SERVER_STATIC_HTML_HEX "20"
 #endif
 
 namespace {
@@ -63,6 +63,16 @@ static constexpr const char UPGRADE_RESPONSE_ACCEPT_PREFIX[] =
 static constexpr const char UPGRADE_RESPONSE_END[] =
   "\r\n\r\n";
 
+void decode_hex(const char* hex, uint8_t* out) {
+  size_t i_out = 0;
+  char hex_byte[3] = {0};
+  for (size_t i = 0; hex[i] && hex[i + 1]; i += 2) {
+    hex_byte[0] = hex[i];
+    hex_byte[1] = hex[i + 1];
+    out[i_out++] = strtol(hex_byte, nullptr, 16);
+  }
+}
+
 } // namespace
 
 bool HTTPHandler::process(struct pbuf* pb) {
@@ -96,15 +106,17 @@ bool HTTPHandler::sendHTML() {
   if (!sendString(HTML_RESPONSE_START)) {
     return false;
   }
+  uint8_t html_payload[sizeof(PICO_WS_SERVER_STATIC_HTML_HEX) / 2];
+  decode_hex(PICO_WS_SERVER_STATIC_HTML_HEX, html_payload);
   char len_string[32];
-  snprintf(len_string, sizeof(len_string), "%d", strlen(PICO_WS_SERVER_STATIC_HTML));
+  snprintf(len_string, sizeof(len_string), "%d", sizeof(html_payload));
   if (!sendString(len_string)) {
     return false;
   }
   if (!sendString(HTML_RESPONSE_END)) {
     return false;
   }
-  if (!sendString(PICO_WS_SERVER_STATIC_HTML)) {
+  if (!send(html_payload, sizeof(html_payload))) {
     return false;
   }
   return true;

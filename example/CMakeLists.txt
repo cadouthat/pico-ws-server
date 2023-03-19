@@ -4,7 +4,7 @@ set(PICO_BOARD pico_w)
 
 include(../pico_sdk_import.cmake)
 
-file(READ static.html PICO_WS_SERVER_STATIC_HTML)
+file(READ static.html PICO_WS_SERVER_STATIC_HTML_HEX HEX)
 add_subdirectory(.. pico-ws-server)
 
 project(ws_server_example C CXX ASM)
