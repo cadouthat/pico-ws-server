@@ -25,6 +25,7 @@ target_link_libraries(pico_ws_server
   pico_cyw43_driver
   pico_lwip_nosys
   pico_mbedtls
+  lwipopts_provider
 )
 
 if (DEFINED PICO_WS_SERVER_STATIC_HTML_HEX)
