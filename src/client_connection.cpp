@@ -31,7 +31,17 @@ bool ClientConnection::sendRaw(const void* data, size_t size) {
     return true;
   }
 
-  return tcp_write(pcb, data, size, TCP_WRITE_FLAG_COPY) == ERR_OK;
+  // TODO: only write tcp_sndbuf() bytes, queue the rest (use tcp_sent() callback)
+  // Note: ERR_MEM still seems to be possible for < tcp_sndbuf()
+  err_t err = tcp_write(pcb, data, size, TCP_WRITE_FLAG_COPY);
+
+  return err == ERR_OK;
+}
+
+bool ClientConnection::flushSend() {
+  cyw43_arch_lwip_check();
+
+  return tcp_output(pcb) == ERR_OK;
 }
 
 void ClientConnection::onClose() {

@@ -119,6 +119,7 @@ bool HTTPHandler::sendHTML() {
   if (!send(html_payload, sizeof(html_payload))) {
     return false;
   }
+  connection.flushSend();
   return true;
 }
 
@@ -135,6 +136,7 @@ bool HTTPHandler::sendUpgradeResponse(uint8_t* key_accept, size_t key_accept_len
   if (!sendString(UPGRADE_RESPONSE_END)) {
     return false;
   }
+  connection.flushSend();
   return true;
 }
 

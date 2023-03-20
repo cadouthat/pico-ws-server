@@ -30,6 +30,10 @@ bool WebSocketHandler::sendRaw(const void* data, size_t size) {
   return connection.sendRaw(data, size);
 }
 
+bool WebSocketHandler::flushSend() {
+  return connection.flushSend();
+}
+
 bool WebSocketHandler::processMessage(const WebSocketMessage& message) {
   switch (message.getType()) {
   case WebSocketMessage::TEXT:

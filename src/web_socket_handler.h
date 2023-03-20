@@ -17,6 +17,7 @@ class WebSocketHandler {
 
   bool process(struct pbuf* pb);
   bool sendRaw(const void* data, size_t size);
+  bool flushSend();
 
   bool processMessage(const WebSocketMessage& message);
 

@@ -41,5 +41,13 @@ bool WebSocketMessageBuilder::sendMessage(const WebSocketMessage& message) {
     return false;
   }
 
-  return handler.sendRaw(message.getPayload(), message.getPayloadSize());
+  if (!handler.sendRaw(message.getPayload(), message.getPayloadSize())) {
+    return false;
+  }
+
+  if (!handler.flushSend()) {
+    // TODO: does flushing need to be re-attempted later?
+    DEBUG("flushSend failed");
+  }
+  return true;
 }
