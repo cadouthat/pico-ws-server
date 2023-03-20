@@ -1,6 +1,9 @@
 # pico-ws-server
 WebSockets server implementation for Raspberry Pi Pico W on top of raw lwIP
 
+## Building
+Users of this library must provide a CMake library named `lwipopts_provider` which provides the `lwipopts.h` header for lwIP configuration.
+
 ## Security
 This server does not currently support HTTPS/WSS
 
