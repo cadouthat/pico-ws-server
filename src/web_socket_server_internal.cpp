@@ -150,10 +150,14 @@ bool WebSocketServerInternal::startListening(uint16_t port) {
     return false;
   }
 
+  cyw43_thread_enter();
+
   listen_pcb = init_listen_pcb(port, this);
   if (listen_pcb) {
     tcp_accept(listen_pcb, on_connect);
   }
+
+  cyw43_thread_exit();
 
   return listen_pcb != nullptr;
 }
@@ -165,7 +169,12 @@ bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const char* payload)
     return false;
   }
 
-  return connection->sendWebSocketMessage(payload);
+  cyw43_thread_enter();
+
+  bool result = connection->sendWebSocketMessage(payload);
+
+  cyw43_thread_exit();
+  return result;
 }
 
 bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const void* payload, size_t payload_size) {
@@ -175,7 +184,12 @@ bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const void* payload,
     return false;
   }
 
-  return connection->sendWebSocketMessage(payload, payload_size);
+  cyw43_thread_enter();
+
+  bool result = connection->sendWebSocketMessage(payload, payload_size);
+
+  cyw43_thread_exit();
+  return result;
 }
 
 ClientConnection* WebSocketServerInternal::onConnect(struct tcp_pcb* pcb) {

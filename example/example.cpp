@@ -40,10 +40,7 @@ int main() {
   server.setCloseCallback(on_disconnect);
   server.setMessageCallback(on_message);
 
-  cyw43_arch_lwip_begin();
   bool server_ok = server.startListening(80);
-  cyw43_arch_lwip_end();
-
   if (!server_ok) {
     printf("Failed to start WebSocket server\n");
     while (1) tight_loop_contents();

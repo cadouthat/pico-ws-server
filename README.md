@@ -4,6 +4,10 @@ WebSockets server implementation for Raspberry Pi Pico W on top of raw lwIP
 ## Building
 Users of this library must provide a CMake library named `lwipopts_provider` which provides the `lwipopts.h` header for lwIP configuration.
 
+Users must also link this library with an implementation of `pico_cyw43_arch` (e.g. `pico_cyw43_arch_lwip_poll`).
+
+Warning: the `pico_cyw43_arch` implementation must allow standard library functions (including `malloc`/`free`) to be called from network workers. This means `pico_cyw43_arch_lwip_threadsafe_background` must _not_ be used, since it executes workers within ISRs.
+
 ## Security
 This server does not currently support HTTPS/WSS
 

@@ -24,7 +24,6 @@ class WebSocketServer {
   void setCallbackExtra(void* arg);
   void* getCallbackExtra();
 
-  // Note: methods below must be called from lwIP context. It is safe to call them from callback handlers
   bool startListening(uint16_t port);
   // Send a TEXT message, payload must be a null-terminated string
   bool sendMessage(uint32_t conn_id, const char* payload);
