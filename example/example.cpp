@@ -47,5 +47,7 @@ int main() {
   }
   printf("WebSocket server started\n");
 
-  while (1) tight_loop_contents();
+  while (1) {
+    cyw43_arch_poll();
+  }
 }
