@@ -9,17 +9,12 @@
 #include "web_socket_message.h"
 
 bool WebSocketHandler::process(struct pbuf* pb) {
-  if (is_closing) {
-    return false;
-  }
-
   for (size_t i = 0; i < pb->tot_len; i++) {
     char c = pbuf_get_at(pb, i);
     if (!message_builder.process(c)) {
-      if (!is_closing) {
-        sendMessage(WebSocketMessage(WebSocketMessage::CLOSE, nullptr, 0));
-        is_closing = true;
-      }
+      // Attempt a graceful disconnect, but set is_closing regardless
+      close();
+      is_closing = true;
       return false;
     }
   }
@@ -42,9 +37,11 @@ bool WebSocketHandler::processMessage(const WebSocketMessage& message) {
     return true;
 
   case WebSocketMessage::CLOSE:
-    DEBUG("CLOSE requested");
-    sendMessage(message);
-    is_closing = true;
+    if (!is_closing) {
+      DEBUG("CLOSE requested");
+      sendMessage(message);
+      is_closing = true;
+    }
     return false;
 
   case WebSocketMessage::PING:
@@ -64,4 +61,17 @@ bool WebSocketHandler::sendMessage(const WebSocketMessage& message) {
   }
 
   return message_builder.sendMessage(message);
+}
+
+bool WebSocketHandler::close() {
+  if (is_closing) {
+    return true;
+  }
+
+  if (!message_builder.sendMessage(WebSocketMessage(WebSocketMessage::CLOSE, nullptr, 0))) {
+    return false;
+  }
+
+  is_closing = true;
+  return true;
 }

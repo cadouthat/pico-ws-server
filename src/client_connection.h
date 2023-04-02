@@ -17,16 +17,21 @@ class ClientConnection {
   ClientConnection(WebSocketServerInternal& server, struct tcp_pcb* pcb)
       : server(server), pcb(pcb), http_handler(*this), ws_handler(*this) {}
 
-  bool process(struct pbuf* pb);
-  bool sendRaw(const void* data, size_t size);
-  bool flushSend();
-
   void onClose();
   bool isClosing();
 
   void processWebSocketMessage(const void* payload, size_t size);
+
+  // Methods below must be called from lwIP-safe context
+
   bool sendWebSocketMessage(const char* payload);
   bool sendWebSocketMessage(const void* payload, size_t size);
+
+  bool close();
+
+  bool process(struct pbuf* pb);
+  bool sendRaw(const void* data, size_t size);
+  bool flushSend();
 
  private:
   WebSocketServerInternal& server;

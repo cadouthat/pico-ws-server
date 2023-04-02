@@ -30,6 +30,11 @@ class WebSocketServer {
   // Send a BINARY message
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);
 
+  // Begin closing the specified connection.
+  // Note: it is still possible for messages to be received on a closing connection,
+  // but no further messages may be sent.
+  bool close(uint32_t conn_id);
+
  private:
   std::unique_ptr<WebSocketServerInternal> internal;
   void* callback_extra = nullptr;

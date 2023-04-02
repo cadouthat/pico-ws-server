@@ -15,6 +15,8 @@ class WebSocketHandler {
   explicit WebSocketHandler(ClientConnection& connection)
       : connection(connection), message_builder(*this) {}
 
+  // Methods below must be called from lwIP-safe context
+
   bool process(struct pbuf* pb);
   bool sendRaw(const void* data, size_t size);
   bool flushSend();
@@ -22,6 +24,7 @@ class WebSocketHandler {
   bool processMessage(const WebSocketMessage& message);
 
   bool sendMessage(const WebSocketMessage& message);
+  bool close();
 
   bool isClosing() { return is_closing; }
 

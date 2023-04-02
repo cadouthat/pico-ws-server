@@ -25,6 +25,8 @@ class WebSocketServerInternal {
   bool sendMessage(uint32_t conn_id, const char* payload);
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);
 
+  bool close(uint32_t conn_id);
+
   ClientConnection* onConnect(struct tcp_pcb* pcb);
   void onUpgrade(ClientConnection* connection);
   void onClose(ClientConnection* connection, bool is_upgraded);

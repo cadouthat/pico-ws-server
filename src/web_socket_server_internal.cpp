@@ -192,6 +192,21 @@ bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const void* payload,
   return result;
 }
 
+bool WebSocketServerInternal::close(uint32_t conn_id) {
+  ClientConnection* connection = getConnectionById(conn_id);
+  if (!connection) {
+    DEBUG("connection not found");
+    return false;
+  }
+
+  cyw43_thread_enter();
+
+  bool result = connection->close();
+
+  cyw43_thread_exit();
+  return result;
+}
+
 ClientConnection* WebSocketServerInternal::onConnect(struct tcp_pcb* pcb) {
   if (connection_by_id.size() >= max_connections) {
     return nullptr;

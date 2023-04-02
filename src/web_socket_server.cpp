@@ -35,3 +35,7 @@ bool WebSocketServer::sendMessage(uint32_t conn_id, const char* payload) {
 bool WebSocketServer::sendMessage(uint32_t conn_id, const void* payload, size_t payload_size) {
   return internal->sendMessage(conn_id, payload, payload_size);
 }
+
+bool WebSocketServer::close(uint32_t conn_id) {
+  return internal->close(conn_id);
+}

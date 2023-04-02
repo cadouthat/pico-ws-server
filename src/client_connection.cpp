@@ -71,3 +71,11 @@ bool ClientConnection::sendWebSocketMessage(const void* payload, size_t size) {
 
   return ws_handler.sendMessage(WebSocketMessage(WebSocketMessage::BINARY, payload, size));
 }
+
+bool ClientConnection::close() {
+  if (!http_handler.isUpgraded()) {
+    return false;
+  }
+
+  return ws_handler.close();
+}

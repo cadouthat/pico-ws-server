@@ -180,6 +180,7 @@ bool HTTPHandler::attemptUpgrade(bool* sent_response) {
 
 bool HTTPHandler::matchAndThen(char c, const char* expected, RequestPart next_part) {
     if (c != expected[current_index++]) {
+      current_index = 0;
       return false;
     }
     if (!expected[current_index]) {
