@@ -192,6 +192,38 @@ bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const void* payload,
   return result;
 }
 
+bool WebSocketServerInternal::sendMessageAll(const char* payload) {
+  if (connection_by_id.size() == 0) {
+    DEBUG("connection map is empty");
+    return false;
+  }
+
+  cyw43_thread_enter();
+  
+  for (auto& kv: connection_by_id) {
+    kv.second->sendWebSocketMessage(payload);
+  }
+
+  cyw43_thread_exit();
+  return true;
+}
+
+bool WebSocketServerInternal::sendMessageAll(const void* payload, size_t payload_size) {
+  if (connection_by_id.size() == 0) {
+    DEBUG("connection map is empty");
+    return false;
+  }
+
+  cyw43_thread_enter();
+  
+  for (auto& kv: connection_by_id) {
+    kv.second->sendWebSocketMessage(payload, payload_size);
+  }
+
+  cyw43_thread_exit();
+  return true;
+}
+
 bool WebSocketServerInternal::close(uint32_t conn_id) {
   ClientConnection* connection = getConnectionById(conn_id);
   if (!connection) {
