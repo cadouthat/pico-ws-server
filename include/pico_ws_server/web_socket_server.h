@@ -31,9 +31,9 @@ class WebSocketServer {
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);
 
   // Send a TEXT message to all connections, payload must be a null-terminated string
-  bool sendMessageAll(const char* payload);
+  bool broadcastMessage(const char* payload);
   // Send a BINARY message to all connections
-  bool sendMessageAll(const void* payload, size_t payload_size);
+  bool broadcastMessage(const void* payload, size_t payload_size);
 
   // Begin closing the specified connection.
   // Note: it is still possible for messages to be received on a closing connection,

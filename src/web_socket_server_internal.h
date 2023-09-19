@@ -24,8 +24,8 @@ class WebSocketServerInternal {
 
   bool sendMessage(uint32_t conn_id, const char* payload);
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);
-  bool sendMessageAll(const char* payload);
-  bool sendMessageAll(const void* payload, size_t payload_size);
+  bool broadcastMessage(const char* payload);
+  bool broadcastMessage(const void* payload, size_t payload_size);
 
   bool close(uint32_t conn_id);
 

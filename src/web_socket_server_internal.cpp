@@ -192,7 +192,7 @@ bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const void* payload,
   return result;
 }
 
-bool WebSocketServerInternal::sendMessageAll(const char* payload) {
+bool WebSocketServerInternal::broadcastMessage(const char* payload) {
   if (connection_by_id.size() == 0) {
     DEBUG("connection map is empty");
     return false;
@@ -200,15 +200,15 @@ bool WebSocketServerInternal::sendMessageAll(const char* payload) {
 
   cyw43_thread_enter();
   
-  for (auto& kv: connection_by_id) {
-    kv.second->sendWebSocketMessage(payload);
+  for (const auto& [_, connection] : connection_by_id) {
+    connection->sendWebSocketMessage(payload);
   }
 
   cyw43_thread_exit();
   return true;
 }
 
-bool WebSocketServerInternal::sendMessageAll(const void* payload, size_t payload_size) {
+bool WebSocketServerInternal::broadcastMessage(const void* payload, size_t payload_size) {
   if (connection_by_id.size() == 0) {
     DEBUG("connection map is empty");
     return false;
@@ -216,8 +216,8 @@ bool WebSocketServerInternal::sendMessageAll(const void* payload, size_t payload
 
   cyw43_thread_enter();
   
-  for (auto& kv: connection_by_id) {
-    kv.second->sendWebSocketMessage(payload, payload_size);
+  for (const auto& [_, connection] : connection_by_id) {
+    connection->sendWebSocketMessage(payload, payload_size);
   }
 
   cyw43_thread_exit();
