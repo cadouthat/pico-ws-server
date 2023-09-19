@@ -36,6 +36,13 @@ bool WebSocketServer::sendMessage(uint32_t conn_id, const void* payload, size_t 
   return internal->sendMessage(conn_id, payload, payload_size);
 }
 
+bool WebSocketServer::broadcastMessage(const char* payload) {
+  return internal->broadcastMessage(payload);
+}
+bool WebSocketServer::broadcastMessage(const void* payload, size_t payload_size) {
+  return internal->broadcastMessage(payload, payload_size);
+}
+
 bool WebSocketServer::close(uint32_t conn_id) {
   return internal->close(conn_id);
 }
