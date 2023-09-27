@@ -25,30 +25,42 @@ err_t on_recv(void* arg, struct tcp_pcb* pcb, struct pbuf* pb, err_t err) {
 
   ClientConnection* connection = (ClientConnection*)arg;
 
-  bool ok = false;
+  bool keep_connection = true;
   if (pb) {
-    ok = connection->process(pb);
+    keep_connection = connection->process(pb);
     tcp_recved(pcb, pb->tot_len);
-  }
 
-  if (!ok) {
-    tcp_arg(pcb, nullptr);
-    connection->onClose();
-    tcp_close(pcb);
-    if (pb) {
+    if (!keep_connection) {
+      DEBUG("closing connection");
+
       if (tcp_output(pcb) != ERR_OK) {
         DEBUG("tcp_output failed");
       }
-      DEBUG("closing connection");
-    } else {
-      DEBUG("client closed connection");
     }
+  } else {
+    keep_connection = false;
+    DEBUG("client closed connection");
+  }
+
+  err_t result = ERR_OK;
+
+  if (!keep_connection) {
+    tcp_arg(pcb, nullptr);
+    connection->onClose();
+    if (tcp_close(pcb) == ERR_OK) {
+      // Not returning ERR_OK nor ERR_ABRT, do not free pbuf
+      return ERR_CLSD;
+    }
+
+    tcp_abort(pcb);
+    result = ERR_ABRT;
   }
 
   if (pb) {
     pbuf_free(pb);
   }
-  return ERR_OK;
+
+  return result;
 }
 
 err_t on_poll(void* arg, struct tcp_pcb* pcb) {
