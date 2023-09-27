@@ -17,6 +17,7 @@ class ClientConnection {
   ClientConnection(WebSocketServerInternal& server, struct tcp_pcb* pcb)
       : server(server), pcb(pcb), http_handler(*this), ws_handler(*this) {}
 
+  // onClose tears down this connection, the reference is no longer safe to use
   void onClose();
   bool isClosing();
 

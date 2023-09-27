@@ -25,50 +25,37 @@ err_t on_recv(void* arg, struct tcp_pcb* pcb, struct pbuf* pb, err_t err) {
 
   ClientConnection* connection = (ClientConnection*)arg;
 
-  bool keep_connection = true;
+  bool keep_connection;
   if (pb) {
     keep_connection = connection->process(pb);
     tcp_recved(pcb, pb->tot_len);
-
-    if (!keep_connection) {
-      DEBUG("closing connection");
-
-      if (tcp_output(pcb) != ERR_OK) {
-        DEBUG("tcp_output failed");
-      }
-    }
+    pbuf_free(pb);
   } else {
     keep_connection = false;
-    DEBUG("client closed connection");
+    DEBUG("client disconnected");
   }
-
-  err_t result = ERR_OK;
 
   if (!keep_connection) {
+    DEBUG("closing connection");
+
     tcp_arg(pcb, nullptr);
     connection->onClose();
-    if (tcp_close(pcb) == ERR_OK) {
-      // Not returning ERR_OK nor ERR_ABRT, do not free pbuf
-      return ERR_CLSD;
+
+    if (tcp_close(pcb) != ERR_OK) {
+      tcp_abort(pcb);
+      return ERR_ABRT;
     }
-
-    tcp_abort(pcb);
-    result = ERR_ABRT;
   }
 
-  if (pb) {
-    pbuf_free(pb);
-  }
-
-  return result;
+  return ERR_OK;
 }
 
 err_t on_poll(void* arg, struct tcp_pcb* pcb) {
   cyw43_arch_lwip_check();
 
   if (!arg) {
-    tcp_abort(pcb);
     DEBUG("aborting inactive connection with null arg");
+    tcp_abort(pcb);
     return ERR_ABRT;
   }
 
@@ -76,8 +63,9 @@ err_t on_poll(void* arg, struct tcp_pcb* pcb) {
   if (connection->isClosing()) {
     tcp_arg(pcb, nullptr);
     connection->onClose();
-    tcp_abort(pcb);
+
     DEBUG("aborting inactive connection after close request");
+    tcp_abort(pcb);
     return ERR_ABRT;
   }
 
@@ -104,16 +92,16 @@ err_t on_connect(void* arg, struct tcp_pcb* new_pcb, err_t err) {
   }
   if (!arg || err != ERR_OK) {
     // Unexpected error
-    tcp_abort(new_pcb);
     DEBUG("aborting %s", arg ? "with arg" : "without arg");
+    tcp_abort(new_pcb);
     return ERR_ABRT;
   }
 
   ClientConnection* connection = ((WebSocketServerInternal*)arg)->onConnect(new_pcb);
   if (!connection) {
     // Unable to accept connection
-    tcp_abort(new_pcb);
     DEBUG("aborting due to server rejection");
+    tcp_abort(new_pcb);
     return ERR_ABRT;
   }
 
@@ -139,15 +127,15 @@ struct tcp_pcb* init_listen_pcb(uint16_t port, void* arg) {
   tcp_arg(temp_pcb, arg);
 
   if (tcp_bind(temp_pcb, IP_ADDR_ANY, port) != ERR_OK) {
-    tcp_abort(temp_pcb);
     DEBUG("failed to bind");
+    tcp_abort(temp_pcb);
     return NULL;
   }
 
   struct tcp_pcb* listen_pcb = tcp_listen(temp_pcb);
   if (!listen_pcb) {
-    tcp_abort(temp_pcb);
     DEBUG("failed to create listen pcb");
+    tcp_abort(temp_pcb);
   }
 
   // temp_pcb has already been freed
