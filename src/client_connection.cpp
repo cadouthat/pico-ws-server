@@ -31,11 +31,13 @@ bool ClientConnection::sendRaw(const void* data, size_t size) {
     return true;
   }
 
-  // TODO: only write tcp_sndbuf() bytes, queue the rest (use tcp_sent() callback)
-  // Note: ERR_MEM still seems to be possible for < tcp_sndbuf()
-  err_t err = tcp_write(pcb, data, size, TCP_WRITE_FLAG_COPY);
-
-  return err == ERR_OK;
+  // Note: unfortunately, we cannot easily determine whether ERR_MEM should be retryable here. It could be a
+  // transient problem that would resolve over time, e.g. if the remote side acks some data and frees up send buffer.
+  // Or, this payload (and the downstream structures needed) may be too large to ever fit in the LwIP pools.
+  //
+  // At best, we could return a "maybe retriable" status here, since we know some errors are permanent. However,
+  // this would add complexity, and would still leave callers with the burden of non-convergent retries.
+  return tcp_write(pcb, data, size, TCP_WRITE_FLAG_COPY) == ERR_OK;
 }
 
 bool ClientConnection::flushSend() {
