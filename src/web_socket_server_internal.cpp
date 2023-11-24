@@ -75,7 +75,7 @@ err_t on_poll(void* arg, struct tcp_pcb* pcb) {
 void on_error(void* arg, err_t err) {
   cyw43_arch_lwip_check();
 
-  DEBUG("connection errored %s", arg ? "with arg" : "without arg");
+  DEBUG("connection errored %s: %d", arg ? "with arg" : "without arg", (int)err);
 
   if (arg) {
     ((ClientConnection*)arg)->onClose();
