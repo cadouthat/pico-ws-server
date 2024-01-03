@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <stdint.h>
 #include <string.h>
+#include <vector>
 
 #include "lwip/pbuf.h"
 #include "mbedtls/base64.h"
@@ -104,23 +105,26 @@ bool HTTPHandler::sendString(const char* s) {
 }
 
 bool HTTPHandler::sendHTML() {
+  // Allocate on heap to avoid stack overflow
+  std::vector<uint8_t> html_payload(sizeof(PICO_WS_SERVER_STATIC_HTML_HEX) / 2);
+  decode_hex(PICO_WS_SERVER_STATIC_HTML_HEX, html_payload.data());
+
   if (!sendString(HTML_RESPONSE_START)) {
     return false;
   }
-  uint8_t html_payload[sizeof(PICO_WS_SERVER_STATIC_HTML_HEX) / 2];
-  decode_hex(PICO_WS_SERVER_STATIC_HTML_HEX, html_payload);
   char len_string[32];
-  snprintf(len_string, sizeof(len_string), "%d", sizeof(html_payload));
+  snprintf(len_string, sizeof(len_string), "%d", html_payload.size());
   if (!sendString(len_string)) {
     return false;
   }
   if (!sendString(HTML_RESPONSE_END)) {
     return false;
   }
-  if (!send(html_payload, sizeof(html_payload))) {
+  if (!send(html_payload.data(), html_payload.size())) {
     return false;
   }
   connection.flushSend();
+
   return true;
 }
 
