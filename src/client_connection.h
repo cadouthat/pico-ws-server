@@ -2,6 +2,7 @@
 #define __CLIENT_CONNECTION_H__
 
 #include <cstddef>
+#include <queue>
 
 #include "lwip/pbuf.h"
 #include "lwip/tcp.h"
@@ -12,6 +13,7 @@
 
 class WebSocketServerInternal;
 
+// Only access from lwIP context
 class ClientConnection {
  public:
   ClientConnection(WebSocketServerInternal& server, struct tcp_pcb* pcb)
@@ -21,15 +23,14 @@ class ClientConnection {
   void onClose();
   bool isClosing();
 
-  void processWebSocketMessage(const void* payload, size_t size);
-
-  // Methods below must be called from lwIP-safe context
+  void processWebSocketMessage(WebSocketMessage&& message);
 
   bool sendWebSocketMessage(const char* payload);
   bool sendWebSocketMessage(const void* payload, size_t size);
 
   bool close();
 
+  void popMessages();
   bool process(struct pbuf* pb);
   bool sendRaw(const void* data, size_t size);
   bool flushSend();
@@ -39,6 +40,8 @@ class ClientConnection {
   struct tcp_pcb* pcb;
   HTTPHandler http_handler;
   WebSocketHandler ws_handler;
+
+  std::queue<WebSocketMessage> message_queue;
 };
 
 #endif

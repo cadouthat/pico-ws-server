@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string.h>
+#include <queue>
 
 #include "cyw43_config.h"
 #include "lwip/pbuf.h"
@@ -9,6 +10,13 @@
 
 #include "web_socket_message.h"
 #include "web_socket_server_internal.h"
+
+void ClientConnection::popMessages() {
+  while (!message_queue.empty()) {
+    server.onMessage(this, message_queue.front().getPayload(), message_queue.front().getPayloadSize());
+    message_queue.pop();
+  }
+}
 
 bool ClientConnection::process(struct pbuf* pb) {
   bool result;
@@ -54,8 +62,8 @@ bool ClientConnection::isClosing() {
   return http_handler.isClosing() || ws_handler.isClosing();
 }
 
-void ClientConnection::processWebSocketMessage(const void* payload, size_t size) {
-  server.onMessage(this, payload, size);
+void ClientConnection::processWebSocketMessage(WebSocketMessage&& message) {
+  message_queue.push(std::move(message));
 }
 
 bool ClientConnection::sendWebSocketMessage(const char* payload) {

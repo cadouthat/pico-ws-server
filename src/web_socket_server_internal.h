@@ -10,17 +10,18 @@
 #include "pico_ws_server/web_socket_server.h"
 #include "client_connection.h"
 
+// Not multicore safe
 class WebSocketServerInternal {
  public:
   WebSocketServerInternal(WebSocketServer& server, uint32_t max_connections)
       : server(server), max_connections(max_connections) {}
 
-  // Atomic access, thread safe
   void setConnectCallback(WebSocketServer::ConnectCallback cb) { connect_cb = cb; }
-  void setMessageCallback(WebSocketServer::MessageCallback cb) { message_cb = cb; }
   void setCloseCallback(WebSocketServer::CloseCallback cb) { close_cb = cb; }
+  void setMessageCallback(WebSocketServer::MessageCallback cb) { message_cb = cb; }
 
   bool startListening(uint16_t port);
+  void popMessages();
 
   bool sendMessage(uint32_t conn_id, const char* payload);
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);

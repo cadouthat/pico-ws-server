@@ -10,6 +10,7 @@
 
 class ClientConnection;
 
+// Only access from lwIP context
 class WebSocketHandler {
  public:
   explicit WebSocketHandler(ClientConnection& connection)
@@ -21,7 +22,7 @@ class WebSocketHandler {
   bool sendRaw(const void* data, size_t size);
   bool flushSend();
 
-  bool processMessage(const WebSocketMessage& message);
+  bool processMessage(WebSocketMessage&& message);
 
   bool sendMessage(const WebSocketMessage& message);
   bool close();

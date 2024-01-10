@@ -28,7 +28,7 @@ bool WebSocketMessageBuilder::processFrame(std::unique_ptr<WebSocketFrame> frame
     WebSocketMessage message(message_frames);
     message_frames.clear();
     total_message_size = 0;
-    return handler.processMessage(message);
+    return handler.processMessage(std::move(message));
   }
 
   return true;

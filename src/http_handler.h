@@ -8,6 +8,7 @@
 
 class ClientConnection;
 
+// Only access from lwIP context
 class HTTPHandler {
  public:
   HTTPHandler(ClientConnection& connection) : connection(connection) {}

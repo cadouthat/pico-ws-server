@@ -24,6 +24,20 @@ class WebSocketMessage {
   WebSocketMessage(Type type, const void* payload, size_t payload_size)
       : type(type), const_payload((uint8_t*)payload), payload_size(payload_size) {}
 
+  WebSocketMessage(WebSocketMessage&& from)
+      : type(from.type),
+        payload_size(from.payload_size),
+        payload(std::move(from.payload)),
+        const_payload(from.const_payload) {}
+
+  WebSocketMessage& operator=(WebSocketMessage&& from) {
+    type = from.type;
+    payload_size = from.payload_size;
+    payload = std::move(from.payload);
+    const_payload = from.const_payload;
+    return *this;
+  }
+
   explicit WebSocketMessage(const std::list<std::unique_ptr<WebSocketFrame>>& frames) {
     for (const auto& frame : frames) {
       payload_size += frame->getPayloadSize();

@@ -7,6 +7,7 @@
 
 #include "client_connection.h"
 #include "debug.h"
+#include "pico_ws_server/cyw43_guard.h"
 
 namespace {
 
@@ -116,7 +117,7 @@ err_t on_connect(void* arg, struct tcp_pcb* new_pcb, err_t err) {
 }
 
 struct tcp_pcb* init_listen_pcb(uint16_t port, void* arg) {
-  cyw43_arch_lwip_check();
+  Cyw43Guard guard;
 
   struct tcp_pcb* temp_pcb = tcp_new_ip_type(IPADDR_TYPE_ANY);
   if (!temp_pcb) {
@@ -145,101 +146,104 @@ struct tcp_pcb* init_listen_pcb(uint16_t port, void* arg) {
 } // namespace
 
 bool WebSocketServerInternal::startListening(uint16_t port) {
+  Cyw43Guard guard;
+
   if (listen_pcb) {
     // Already listening
     return false;
   }
-
-  cyw43_thread_enter();
 
   listen_pcb = init_listen_pcb(port, this);
   if (listen_pcb) {
     tcp_accept(listen_pcb, on_connect);
   }
 
-  cyw43_thread_exit();
-
   return listen_pcb != nullptr;
 }
 
+void WebSocketServerInternal::popMessages() {
+  Cyw43Guard guard;
+
+  for (const auto& [_, conn] : connection_by_id) {
+    conn->popMessages();
+  }
+}
+
 bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const char* payload) {
+  Cyw43Guard guard;
+
   ClientConnection* connection = getConnectionById(conn_id);
   if (!connection) {
     DEBUG("connection not found");
     return false;
   }
 
-  cyw43_thread_enter();
-
   bool result = connection->sendWebSocketMessage(payload);
 
-  cyw43_thread_exit();
   return result;
 }
 
 bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const void* payload, size_t payload_size) {
+  Cyw43Guard guard;
+
   ClientConnection* connection = getConnectionById(conn_id);
   if (!connection) {
     DEBUG("connection not found");
     return false;
   }
 
-  cyw43_thread_enter();
-
   bool result = connection->sendWebSocketMessage(payload, payload_size);
 
-  cyw43_thread_exit();
   return result;
 }
 
 bool WebSocketServerInternal::broadcastMessage(const char* payload) {
+  Cyw43Guard guard;
+
   if (connection_by_id.size() == 0) {
     DEBUG("connection map is empty");
     return false;
   }
 
-  cyw43_thread_enter();
-  
   for (const auto& [_, connection] : connection_by_id) {
     connection->sendWebSocketMessage(payload);
   }
 
-  cyw43_thread_exit();
   return true;
 }
 
 bool WebSocketServerInternal::broadcastMessage(const void* payload, size_t payload_size) {
+  Cyw43Guard guard;
+
   if (connection_by_id.size() == 0) {
     DEBUG("connection map is empty");
     return false;
   }
 
-  cyw43_thread_enter();
-  
   for (const auto& [_, connection] : connection_by_id) {
     connection->sendWebSocketMessage(payload, payload_size);
   }
 
-  cyw43_thread_exit();
   return true;
 }
 
 bool WebSocketServerInternal::close(uint32_t conn_id) {
+  Cyw43Guard guard;
+
   ClientConnection* connection = getConnectionById(conn_id);
   if (!connection) {
     DEBUG("connection not found");
     return false;
   }
 
-  cyw43_thread_enter();
-
   bool result = connection->close();
 
-  cyw43_thread_exit();
   return result;
 }
 
 ClientConnection* WebSocketServerInternal::onConnect(struct tcp_pcb* pcb) {
+  cyw43_arch_lwip_check();
+
   if (connection_by_id.size() >= max_connections) {
     return nullptr;
   }
@@ -254,12 +258,16 @@ ClientConnection* WebSocketServerInternal::onConnect(struct tcp_pcb* pcb) {
 }
 
 void WebSocketServerInternal::onUpgrade(ClientConnection* connection) {
+  cyw43_arch_lwip_check();
+
   if (connect_cb) {
     connect_cb(server, getConnectionId(connection));
   }
 }
 
 void WebSocketServerInternal::onClose(ClientConnection* connection, bool is_upgraded) {
+  cyw43_arch_lwip_check();
+
   uint32_t conn_id = getConnectionId(connection);
 
   if (is_upgraded && close_cb) {
@@ -270,6 +278,8 @@ void WebSocketServerInternal::onClose(ClientConnection* connection, bool is_upgr
 }
 
 void WebSocketServerInternal::onMessage(ClientConnection* connection, const void* payload, size_t size) {
+  cyw43_arch_lwip_check();
+
   if (message_cb) {
     message_cb(server, getConnectionId(connection), payload, size);
   }
@@ -281,6 +291,8 @@ uint32_t WebSocketServerInternal::getConnectionId(ClientConnection* connection) 
 }
 
 ClientConnection* WebSocketServerInternal::getConnectionById(uint32_t conn_id) {
+  Cyw43Guard guard;
+
   auto iter = connection_by_id.find(conn_id);
   if (iter == connection_by_id.end()) {
     return nullptr;

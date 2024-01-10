@@ -28,6 +28,9 @@ void* WebSocketServer::getCallbackExtra() {
 bool WebSocketServer::startListening(uint16_t port) {
   return internal->startListening(port);
 }
+void WebSocketServer::popMessages() {
+  internal->popMessages();
+}
 
 bool WebSocketServer::sendMessage(uint32_t conn_id, const char* payload) {
   return internal->sendMessage(conn_id, payload);

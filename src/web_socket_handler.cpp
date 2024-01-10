@@ -29,11 +29,11 @@ bool WebSocketHandler::flushSend() {
   return connection.flushSend();
 }
 
-bool WebSocketHandler::processMessage(const WebSocketMessage& message) {
+bool WebSocketHandler::processMessage(WebSocketMessage&& message) {
   switch (message.getType()) {
   case WebSocketMessage::TEXT:
   case WebSocketMessage::BINARY:
-    connection.processWebSocketMessage(message.getPayload(), message.getPayloadSize());
+    connection.processWebSocketMessage(std::move(message));
     return true;
 
   case WebSocketMessage::CLOSE:

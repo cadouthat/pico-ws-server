@@ -153,7 +153,9 @@ bool HTTPHandler::attemptUpgrade(bool* sent_response) {
     ws_key_header_value);
   if (!has_upgrade_header && !has_connection_header && !has_ws_version_header) {
     // Not a WebSocket request, serve static HTML and close connection
-    sendHTML();
+    if (!sendHTML()) {
+      DEBUG("failed to send HTML response");
+    }
     *sent_response = true;
     return false;
   }
