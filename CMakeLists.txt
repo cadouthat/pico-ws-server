@@ -20,6 +20,8 @@ add_library(pico_ws_server
 target_include_directories(pico_ws_server PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include )
 target_include_directories(pico_ws_server PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src )
 
+target_compile_definitions(pico_ws_server PUBLIC DEBUG_PRINT=0)
+
 target_link_libraries(pico_ws_server
   pico_stdlib
   pico_cyw43_driver
