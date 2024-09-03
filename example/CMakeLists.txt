@@ -4,13 +4,14 @@ set(PICO_BOARD pico_w)
 
 include(../pico_sdk_import.cmake)
 
-file(READ static.html PICO_WS_SERVER_STATIC_HTML_HEX HEX)
-add_subdirectory(.. pico-ws-server)
-
 project(ws_server_example C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 pico_sdk_init()
+
+set(STATIC_HTML_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+set(STATIC_HTML_FILENAME "static.html")
+add_subdirectory(.. pico-ws-server)
 
 add_library(lwipopts_provider INTERFACE)
 target_include_directories(lwipopts_provider INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)

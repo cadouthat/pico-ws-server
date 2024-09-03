@@ -12,9 +12,8 @@
 #include "client_connection.h"
 #include "debug.h"
 
-#ifndef PICO_WS_SERVER_STATIC_HTML_HEX
-#define PICO_WS_SERVER_STATIC_HTML_HEX "20"
-#endif
+// generated at build time -- see CMakeLists.txt
+#include <static_html_hex.h>
 
 namespace {
 
@@ -52,6 +51,7 @@ static constexpr const char HTML_RESPONSE_START[] =
   "HTTP/1.1 200 OK\r\n"
   "Connection: close\r\n"
   "Content-Type: text/html\r\n"
+  "Content-Encoding: gzip\r\n"
   "Content-Length: ";
 static constexpr const char HTML_RESPONSE_END[] =
   "\r\n\r\n";
@@ -105,22 +105,18 @@ bool HTTPHandler::sendString(const char* s) {
 }
 
 bool HTTPHandler::sendHTML() {
-  // Allocate on heap to avoid stack overflow
-  std::vector<uint8_t> html_payload(sizeof(PICO_WS_SERVER_STATIC_HTML_HEX) / 2);
-  decode_hex(PICO_WS_SERVER_STATIC_HTML_HEX, html_payload.data());
-
   if (!sendString(HTML_RESPONSE_START)) {
     return false;
   }
   char len_string[32];
-  snprintf(len_string, sizeof(len_string), "%d", html_payload.size());
+ snprintf(len_string, sizeof(len_string), "%d", static_html_gz_len);
   if (!sendString(len_string)) {
     return false;
   }
   if (!sendString(HTML_RESPONSE_END)) {
     return false;
   }
-  if (!send(html_payload.data(), html_payload.size())) {
+  if (!send(static_html_gz, static_html_gz_len)) {
     return false;
   }
   connection.flushSend();
