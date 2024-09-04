@@ -109,7 +109,7 @@ bool HTTPHandler::sendHTML() {
     return false;
   }
   char len_string[32];
- snprintf(len_string, sizeof(len_string), "%d", static_html_gz_len);
+  snprintf(len_string, sizeof(len_string), "%d", static_html_gz_len);
   if (!sendString(len_string)) {
     return false;
   }
