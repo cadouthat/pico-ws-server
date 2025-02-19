@@ -22,6 +22,8 @@ bool ClientConnection::process(struct pbuf* pb) {
   bool result;
   if (http_handler.isUpgraded()) {
     result = ws_handler.process(pb);
+  } else if (server.onUser(this, pb)) {
+    result = true;
   } else {
     result = http_handler.process(pb);
     if (http_handler.isUpgraded()) {

@@ -24,6 +24,9 @@ void WebSocketServer::setCallbackExtra(void* arg) {
 void* WebSocketServer::getCallbackExtra() {
   return callback_extra;
 }
+void WebSocketServer::setUserCallback(UserCallback cb, void* context) {
+  internal->setUserCallback(cb, context);
+}
 
 bool WebSocketServer::startListening(uint16_t port) {
   return internal->startListening(port);
@@ -44,6 +47,10 @@ bool WebSocketServer::broadcastMessage(const char* payload) {
 }
 bool WebSocketServer::broadcastMessage(const void* payload, size_t payload_size) {
   return internal->broadcastMessage(payload, payload_size);
+}
+
+bool WebSocketServer::sendRaw(uint32_t conn_id, const char* payload, size_t payload_size) {
+  return internal->sendRaw(conn_id, payload, payload_size);
 }
 
 bool WebSocketServer::close(uint32_t conn_id) {

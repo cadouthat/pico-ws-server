@@ -14,6 +14,7 @@ class WebSocketServer {
   // Note: data can be treated as a null-terminated string if expecting TEXT messages (an extra NULL byte is allocated)
   typedef void (*MessageCallback)(WebSocketServer& server, uint32_t conn_id, const void *data, size_t len);
   typedef void (*CloseCallback)(WebSocketServer& server, uint32_t conn_id);
+  typedef bool (*UserCallback)(WebSocketServer& server, uint32_t conn_id, struct pbuf* pb, void* context);
 
   WebSocketServer(uint32_t max_connections = 1);
   ~WebSocketServer();
@@ -28,6 +29,8 @@ class WebSocketServer {
   void setCallbackExtra(void* arg);
   void* getCallbackExtra();
 
+  void setUserCallback(UserCallback cb, void* context = nullptr);
+
   bool startListening(uint16_t port);
   // Must be called routinely to process incoming messages (triggers message callback)
   void popMessages();
@@ -41,6 +44,9 @@ class WebSocketServer {
   bool broadcastMessage(const char* payload);
   // Send a BINARY message to all connections
   bool broadcastMessage(const void* payload, size_t payload_size);
+
+  // Send an raw (non-websocket) message
+  bool sendRaw(uint32_t conn_id, const char* payload, size_t payload_size);
 
   // Begin closing the specified connection.
   // Note: it is still possible for messages to be received on a closing connection,

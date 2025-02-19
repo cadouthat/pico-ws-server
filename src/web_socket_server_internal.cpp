@@ -227,6 +227,24 @@ bool WebSocketServerInternal::broadcastMessage(const void* payload, size_t paylo
   return true;
 }
 
+bool WebSocketServerInternal::sendRaw(uint32_t conn_id, const char* payload, size_t payload_size) {
+  Cyw43Guard guard;
+
+  ClientConnection* connection = getConnectionById(conn_id);
+  if (!connection) {
+    DEBUG("connection not found");
+    return false;
+  }
+
+  if (!connection->sendRaw(payload, payload_size)) {
+    DEBUG("failed to send raw data");
+    return false;
+  }
+
+  connection->flushSend();
+  return true;
+}
+
 bool WebSocketServerInternal::close(uint32_t conn_id) {
   Cyw43Guard guard;
 
@@ -283,6 +301,16 @@ void WebSocketServerInternal::onMessage(ClientConnection* connection, const void
   if (message_cb) {
     message_cb(server, getConnectionId(connection), payload, size);
   }
+}
+
+bool WebSocketServerInternal::onUser(ClientConnection* connection, struct pbuf* pb) {
+  cyw43_arch_lwip_check();
+
+  if (!user_cb) {
+    return false;
+  }
+
+  return user_cb(server, getConnectionId(connection), pb, user_cb_context);
 }
 
 uint32_t WebSocketServerInternal::getConnectionId(ClientConnection* connection) {

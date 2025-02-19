@@ -19,6 +19,10 @@ class WebSocketServerInternal {
   void setConnectCallback(WebSocketServer::ConnectCallback cb) { connect_cb = cb; }
   void setCloseCallback(WebSocketServer::CloseCallback cb) { close_cb = cb; }
   void setMessageCallback(WebSocketServer::MessageCallback cb) { message_cb = cb; }
+  void setUserCallback(WebSocketServer::UserCallback cb, void* context) {
+    user_cb = cb;
+    user_cb_context = context;
+  }
 
   bool startListening(uint16_t port);
   void popMessages();
@@ -28,6 +32,8 @@ class WebSocketServerInternal {
   bool broadcastMessage(const char* payload);
   bool broadcastMessage(const void* payload, size_t payload_size);
 
+  bool sendRaw(uint32_t conn_id, const char* payload, size_t payload_size);
+
   bool close(uint32_t conn_id);
 
   ClientConnection* onConnect(struct tcp_pcb* pcb);
@@ -36,6 +42,8 @@ class WebSocketServerInternal {
 
   void onMessage(ClientConnection* connection, const void* payload, size_t size);
 
+  bool onUser(ClientConnection* connection, struct pbuf* pb);
+
  private:
   WebSocketServer& server;
 
@@ -43,6 +51,8 @@ class WebSocketServerInternal {
   WebSocketServer::ConnectCallback connect_cb = nullptr;
   WebSocketServer::MessageCallback message_cb = nullptr;
   WebSocketServer::CloseCallback close_cb = nullptr;
+  WebSocketServer::UserCallback user_cb = nullptr;
+  void* user_cb_context = nullptr;
 
   struct tcp_pcb* listen_pcb = nullptr;
   std::unordered_map<uint32_t, std::unique_ptr<ClientConnection>> connection_by_id;
