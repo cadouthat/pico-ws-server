@@ -38,6 +38,7 @@ class ClientConnection {
  private:
   WebSocketServerInternal& server;
   struct tcp_pcb* pcb;
+  bool is_upgraded = false;
   HTTPHandler http_handler;
   WebSocketHandler ws_handler;
 

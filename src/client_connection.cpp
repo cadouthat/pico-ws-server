@@ -19,19 +19,19 @@ void ClientConnection::popMessages() {
 }
 
 bool ClientConnection::process(struct pbuf* pb) {
-  bool result;
-  if (http_handler.isUpgraded()) {
-    result = ws_handler.process(pb);
+  bool keep_connection = true;
+  if (is_upgraded) {
+    keep_connection = ws_handler.process(pb);
   } else if (server.onUser(this, pb)) {
-    result = true;
+    keep_connection = false;
   } else {
-    result = http_handler.process(pb);
-    if (http_handler.isUpgraded()) {
+    keep_connection = http_handler.process(pb, &is_upgraded);
+    if (is_upgraded) {
       server.onUpgrade(this);
     }
   }
 
-  return result;
+  return keep_connection;
 }
 
 bool ClientConnection::sendRaw(const void* data, size_t size) {
@@ -57,7 +57,7 @@ bool ClientConnection::flushSend() {
 }
 
 void ClientConnection::onClose() {
-  server.onClose(this, http_handler.isUpgraded());
+  server.onClose(this, is_upgraded);
 }
 
 bool ClientConnection::isClosing() {
@@ -69,7 +69,7 @@ void ClientConnection::processWebSocketMessage(WebSocketMessage&& message) {
 }
 
 bool ClientConnection::sendWebSocketMessage(const char* payload) {
-  if (!http_handler.isUpgraded()) {
+  if (!is_upgraded) {
     return false;
   }
 
@@ -77,7 +77,7 @@ bool ClientConnection::sendWebSocketMessage(const char* payload) {
 }
 
 bool ClientConnection::sendWebSocketMessage(const void* payload, size_t size) {
-  if (!http_handler.isUpgraded()) {
+  if (!is_upgraded) {
     return false;
   }
 
@@ -85,7 +85,7 @@ bool ClientConnection::sendWebSocketMessage(const void* payload, size_t size) {
 }
 
 bool ClientConnection::close() {
-  if (!http_handler.isUpgraded()) {
+  if (!is_upgraded) {
     return false;
   }
 

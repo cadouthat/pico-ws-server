@@ -15,6 +15,7 @@ mark_as_advanced(STATIC_HTML_FILENAME)
 add_library(pico_ws_server
   src/client_connection.cpp
   src/http_handler.cpp
+  src/http_request.cpp
   src/web_socket_frame_builder.cpp
   src/web_socket_handler.cpp
   src/web_socket_message_builder.cpp
