@@ -25,6 +25,9 @@ class ClientConnection {
 
   void processWebSocketMessage(WebSocketMessage&& message);
 
+  bool sendWebSocketTextMessage(const char* payload);
+  bool sendWebSocketBinaryMessage(const void* payload, size_t size);
+
   bool sendWebSocketMessage(const char* payload);
   bool sendWebSocketMessage(const void* payload, size_t size);
 
