@@ -66,20 +66,32 @@ void ClientConnection::processWebSocketMessage(WebSocketMessage&& message) {
   message_queue.push(std::move(message));
 }
 
-bool ClientConnection::sendWebSocketMessage(const char* payload) {
+bool ClientConnection::sendWebSocketTextMessage(const char* payload) {
   if (!http_handler.isUpgraded()) {
     return false;
+  }
+
+  if (!payload) {
+    payload = "";
   }
 
   return ws_handler.sendMessage(WebSocketMessage(WebSocketMessage::TEXT, payload, strlen(payload)));
 }
 
-bool ClientConnection::sendWebSocketMessage(const void* payload, size_t size) {
+bool ClientConnection::sendWebSocketBinaryMessage(const void* payload, size_t size) {
   if (!http_handler.isUpgraded()) {
     return false;
   }
 
   return ws_handler.sendMessage(WebSocketMessage(WebSocketMessage::BINARY, payload, size));
+}
+
+bool ClientConnection::sendWebSocketMessage(const char* payload) {
+  return sendWebSocketTextMessage(payload);
+}
+
+bool ClientConnection::sendWebSocketMessage(const void* payload, size_t size) {
+  return sendWebSocketBinaryMessage(payload, size);
 }
 
 bool ClientConnection::close() {
