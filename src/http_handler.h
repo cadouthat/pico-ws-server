@@ -16,7 +16,7 @@ class HTTPHandler {
   bool process(struct pbuf* pb);
   bool isUpgraded() { return is_upgraded; }
   bool isClosing() { return is_closing; }
-  bool needsSentCallback() const { return serving_static_html; }
+  bool needsSentCallback() const { return serving_static_html && !is_upgraded; }
   bool onSent(uint16_t len);
 
  private:

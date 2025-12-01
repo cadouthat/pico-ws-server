@@ -305,6 +305,11 @@ bool HTTPHandler::process(char c, bool *sent_response) {
 }
 
 bool HTTPHandler::onSent(uint16_t len) {
+  // Don't process sent callbacks after upgrade to WebSocket
+  if (is_upgraded) {
+    return true;
+  }
+
   if (!response_committed) {
     return !is_closing;
   }
