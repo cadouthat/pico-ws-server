@@ -54,6 +54,14 @@ bool ClientConnection::flushSend() {
   return tcp_output(pcb) == ERR_OK;
 }
 
+bool ClientConnection::needsSentCallback() {
+  return http_handler.needsSentCallback();
+}
+
+bool ClientConnection::onSent(uint16_t len) {
+  return http_handler.onSent(len);
+}
+
 void ClientConnection::onClose() {
   server.onClose(this, http_handler.isUpgraded());
 }

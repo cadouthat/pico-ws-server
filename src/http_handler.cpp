@@ -109,17 +109,55 @@ bool HTTPHandler::sendHTML() {
     return false;
   }
   char len_string[32];
-  snprintf(len_string, sizeof(len_string), "%d", static_html_gz_len);
+  snprintf(len_string, sizeof(len_string), "%u", (unsigned int)static_html_gz_len);
   if (!sendString(len_string)) {
     return false;
   }
   if (!sendString(HTML_RESPONSE_END)) {
     return false;
   }
-  if (!send(static_html_gz, static_html_gz_len)) {
+
+  size_t header_bytes = strlen(HTML_RESPONSE_START) + strlen(len_string) + strlen(HTML_RESPONSE_END);
+  response_total_bytes = header_bytes + static_html_gz_len;
+  response_bytes_acked = 0;
+  response_committed = true;
+  serving_static_html = true;
+  static_html_offset = 0;
+
+  if (!sendHTMLChunks()) {
+    response_committed = false;
+    serving_static_html = false;
+    response_total_bytes = 0;
     return false;
   }
-  connection.flushSend();
+
+  return true;
+}
+
+bool HTTPHandler::sendHTMLChunks() {
+  if (!serving_static_html) {
+    return true;
+  }
+
+  bool sent_any = false;
+  while (static_html_offset < static_html_gz_len) {
+    size_t remaining = static_html_gz_len - static_html_offset;
+    size_t chunk = remaining < HTML_CHUNK_SIZE ? remaining : HTML_CHUNK_SIZE;
+    if (!send(static_html_gz + static_html_offset, chunk)) {
+      if (!sent_any) {
+        return false;
+      }
+      connection.flushSend();
+      break;
+    }
+    sent_any = true;
+    static_html_offset += chunk;
+    connection.flushSend();
+  }
+
+  if (static_html_offset >= static_html_gz_len) {
+    serving_static_html = false;
+  }
 
   return true;
 }
@@ -264,4 +302,28 @@ bool HTTPHandler::process(char c, bool *sent_response) {
   default:
     return false;
   }
+}
+
+bool HTTPHandler::onSent(uint16_t len) {
+  if (!response_committed) {
+    return !is_closing;
+  }
+
+  response_bytes_acked += len;
+
+  if (serving_static_html) {
+    if (!sendHTMLChunks()) {
+      is_closing = true;
+      return false;
+    }
+    if (serving_static_html) {
+      return true;
+    }
+  }
+
+  if (response_bytes_acked >= response_total_bytes) {
+    return false;
+  }
+
+  return true;
 }
