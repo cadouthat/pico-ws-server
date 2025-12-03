@@ -247,11 +247,14 @@ bool WebSocketServerInternal::broadcastMessage(const void* payload, size_t paylo
     return false;
   }
 
+  bool all_success = true;
   for (const auto& [_, connection] : connection_by_id) {
-    connection->sendWebSocketMessage(payload, payload_size);
+    if (!connection->sendWebSocketMessage(payload, payload_size)) {
+      all_success = false;
+    }
   }
 
-  return true;
+  return all_success;
 }
 
 bool WebSocketServerInternal::close(uint32_t conn_id) {
@@ -273,6 +276,11 @@ ClientConnection* WebSocketServerInternal::onConnect(struct tcp_pcb* pcb) {
 
   if (connection_by_id.size() >= max_connections) {
     return nullptr;
+  }
+
+  // Apply TCP_NODELAY setting if enabled
+  if (tcp_nodelay) {
+    tcp_nagle_disable(pcb);
   }
 
   auto connection = std::make_unique<ClientConnection>(*this, pcb);

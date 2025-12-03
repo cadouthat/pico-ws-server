@@ -32,6 +32,11 @@ class WebSocketServer {
   // Must be called routinely to process incoming messages (triggers message callback)
   void popMessages();
 
+  // Set TCP_NODELAY option to disable Nagle's algorithm for lower latency.
+  // Call this before startListening() or after connections are established.
+  // Default is false (Nagle's algorithm enabled).
+  void setTcpNoDelay(bool enabled);
+
   // Send a TEXT message, payload must be a null-terminated string
   bool sendMessage(uint32_t conn_id, const char* payload);
   // Send a BINARY message

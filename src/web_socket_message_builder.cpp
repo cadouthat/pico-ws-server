@@ -66,9 +66,10 @@ bool WebSocketMessageBuilder::sendMessage(const WebSocketMessage& message) {
     return false;
   }
 
+  // Flush must succeed for data to be sent
   if (!handler.flushSend()) {
-    // TODO: does flushing need to be re-attempted later?
     DEBUG("flushSend failed");
+    return false;
   }
   return true;
 }
