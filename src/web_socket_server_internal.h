@@ -19,6 +19,7 @@ class WebSocketServerInternal {
   void setConnectCallback(WebSocketServer::ConnectCallback cb) { connect_cb = cb; }
   void setCloseCallback(WebSocketServer::CloseCallback cb) { close_cb = cb; }
   void setMessageCallback(WebSocketServer::MessageCallback cb) { message_cb = cb; }
+  void setTcpNoDelay(bool enabled) { tcp_nodelay = enabled; }
 
   bool startListening(uint16_t port);
   void popMessages();
@@ -40,6 +41,7 @@ class WebSocketServerInternal {
   WebSocketServer& server;
 
   uint32_t max_connections;
+  bool tcp_nodelay = false;
   WebSocketServer::ConnectCallback connect_cb = nullptr;
   WebSocketServer::MessageCallback message_cb = nullptr;
   WebSocketServer::CloseCallback close_cb = nullptr;

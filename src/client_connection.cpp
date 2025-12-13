@@ -45,6 +45,9 @@ bool ClientConnection::sendRaw(const void* data, size_t size) {
   //
   // At best, we could return a "maybe retriable" status here, since we know some errors are permanent. However,
   // this would add complexity, and would still leave callers with the burden of non-convergent retries.
+  //
+  // Use TCP_WRITE_FLAG_COPY to copy data, and omit TCP_WRITE_FLAG_MORE to signal this is complete data
+  // that should be pushed immediately (sets PSH flag)
   return tcp_write(pcb, data, size, TCP_WRITE_FLAG_COPY) == ERR_OK;
 }
 
@@ -52,6 +55,14 @@ bool ClientConnection::flushSend() {
   cyw43_arch_lwip_check();
 
   return tcp_output(pcb) == ERR_OK;
+}
+
+bool ClientConnection::needsSentCallback() {
+  return http_handler.needsSentCallback();
+}
+
+bool ClientConnection::onSent(uint16_t len) {
+  return http_handler.onSent(len);
 }
 
 void ClientConnection::onClose() {

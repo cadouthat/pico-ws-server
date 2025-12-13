@@ -16,9 +16,12 @@ class HTTPHandler {
   bool process(struct pbuf* pb);
   bool isUpgraded() { return is_upgraded; }
   bool isClosing() { return is_closing; }
+  bool needsSentCallback() const { return serving_static_html && !is_upgraded; }
+  bool onSent(uint16_t len);
 
  private:
   static constexpr auto HEADER_BUF_SIZE = 64;
+  static constexpr size_t HTML_CHUNK_SIZE = 512;
 
   enum RequestPart {
     METHOD,
@@ -31,6 +34,11 @@ class HTTPHandler {
   ClientConnection& connection;
   bool is_upgraded = false;
   bool is_closing = false;
+  bool response_committed = false;
+  bool serving_static_html = false;
+  size_t static_html_offset = 0;
+  size_t response_bytes_acked = 0;
+  size_t response_total_bytes = 0;
 
   size_t request_bytes = 0;
   RequestPart current_part = METHOD;
@@ -46,6 +54,7 @@ class HTTPHandler {
   bool send(const void* data, size_t size);
   bool sendString(const char* s);
   bool sendHTML();
+  bool sendHTMLChunks();
   bool sendUpgradeResponse(uint8_t* key_accept, size_t key_accept_len);
   bool attemptUpgrade(bool* sent_html);
 

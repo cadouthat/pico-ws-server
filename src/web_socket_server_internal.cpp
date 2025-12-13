@@ -51,6 +51,32 @@ err_t on_recv(void* arg, struct tcp_pcb* pcb, struct pbuf* pb, err_t err) {
   return ERR_OK;
 }
 
+err_t on_sent(void* arg, struct tcp_pcb* pcb, u16_t len) {
+  cyw43_arch_lwip_check();
+
+  if (!arg) {
+    return ERR_OK;
+  }
+
+  ClientConnection* connection = (ClientConnection*)arg;
+  if (!connection->needsSentCallback()) {
+    return ERR_OK;
+  }
+
+  bool keep_connection = connection->onSent(len);
+  if (!keep_connection) {
+    tcp_arg(pcb, nullptr);
+    connection->onClose();
+
+    if (tcp_close(pcb) != ERR_OK) {
+      tcp_abort(pcb);
+      return ERR_ABRT;
+    }
+  }
+
+  return ERR_OK;
+}
+
 err_t on_poll(void* arg, struct tcp_pcb* pcb) {
   cyw43_arch_lwip_check();
 
@@ -109,6 +135,7 @@ err_t on_connect(void* arg, struct tcp_pcb* new_pcb, err_t err) {
   tcp_arg(new_pcb, connection);
   tcp_err(new_pcb, on_error);
   tcp_recv(new_pcb, on_recv);
+  tcp_sent(new_pcb, on_sent);
   tcp_poll(new_pcb, on_poll, POLL_TIMER_COARSE);
 
   DEBUG("success");
@@ -220,11 +247,14 @@ bool WebSocketServerInternal::broadcastMessage(const void* payload, size_t paylo
     return false;
   }
 
+  bool all_success = true;
   for (const auto& [_, connection] : connection_by_id) {
-    connection->sendWebSocketMessage(payload, payload_size);
+    if (!connection->sendWebSocketMessage(payload, payload_size)) {
+      all_success = false;
+    }
   }
 
-  return true;
+  return all_success;
 }
 
 bool WebSocketServerInternal::close(uint32_t conn_id) {
@@ -246,6 +276,11 @@ ClientConnection* WebSocketServerInternal::onConnect(struct tcp_pcb* pcb) {
 
   if (connection_by_id.size() >= max_connections) {
     return nullptr;
+  }
+
+  // Apply TCP_NODELAY setting if enabled
+  if (tcp_nodelay) {
+    tcp_nagle_disable(pcb);
   }
 
   auto connection = std::make_unique<ClientConnection>(*this, pcb);

@@ -32,6 +32,10 @@ void WebSocketServer::popMessages() {
   internal->popMessages();
 }
 
+void WebSocketServer::setTcpNoDelay(bool enabled) {
+  internal->setTcpNoDelay(enabled);
+}
+
 bool WebSocketServer::sendMessage(uint32_t conn_id, const char* payload) {
   return internal->sendMessage(conn_id, payload);
 }
