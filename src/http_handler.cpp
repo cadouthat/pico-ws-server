@@ -206,7 +206,7 @@ bool HTTPHandler::attemptUpgrade(bool* sent_response) {
   strcat(combined_key, WS_KEY_MAGIC);
 
   uint8_t sha1[SHA1_SIZE];
-  if (mbedtls_sha1_ret((uint8_t*)combined_key, strlen(combined_key), sha1) != 0) {
+  if (mbedtls_sha1((uint8_t*)combined_key, strlen(combined_key), sha1) != 0) {
     return false;
   }
 
