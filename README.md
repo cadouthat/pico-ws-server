@@ -37,6 +37,80 @@ cd example/static_html_generator
 ```
 This compresses the HTML with gzip and generates a C header file with the embedded content. The script requires `gzip` and `xxd` to be installed. The script runs on macOS, Linux, and Windows with WSL.
 
+## API Reference
+
+### Server Initialization
+- **`WebSocketServer(uint32_t max_connections = 1)`**  
+  Constructor. Creates a WebSocket server instance supporting up to `max_connections` simultaneous connections.
+
+- **`bool startListening(uint16_t port)`**  
+  Starts the server listening on the specified port. Returns `true` on success.
+
+### Message Processing
+- **`void popMessages()`**  
+  Must be called routinely in your main loop to process incoming messages. This triggers registered message callbacks for any queued messages.
+
+### Callbacks
+All callbacks receive a `WebSocketServer&` reference and `conn_id` to identify the connection. Use `setCallbackExtra()` to pass custom application state.
+
+#### Connection Lifecycle
+- **`void setConnectCallback(ConnectCallback cb)`**  
+  Callback signature: `void callback(WebSocketServer& server, uint32_t conn_id)`  
+  Called when a new WebSocket connection is established.  
+  ⚠️ **Warning**: May be called from ISR context. Use caution with shared data and avoid acquiring mutexes.
+
+- **`void setCloseCallback(CloseCallback cb)`**  
+  Callback signature: `void callback(WebSocketServer& server, uint32_t conn_id)`  
+  Called when a connection closes.  
+  ⚠️ **Warning**: May be called from ISR context. Use caution with shared data and avoid acquiring mutexes.
+
+#### Message Handling
+- **`void setMessageCallback(MessageCallback cb)`**  
+  Callback signature: `void callback(WebSocketServer& server, uint32_t conn_id, const void* data, size_t len)`  
+  Called when a complete message is received. The `data` pointer includes an extra null terminator for TEXT messages, allowing safe treatment as a C string.  
+  **Context**: Not called from ISR, but holds the cyw43 context lock.
+
+#### PING/PONG Monitoring
+- **`void setPongCallback(PongCallback cb)`**  
+  Callback signature: `void callback(WebSocketServer& server, uint32_t conn_id, const void* data, size_t len)`  
+  Called when a PONG frame is received (typically in response to `sendPing()`). If no callback is registered, PONG frames are silently ignored.  
+  **Context**: Same as message callback (cyw43 lock held, not ISR).
+
+#### Custom Application State
+- **`void setCallbackExtra(void* arg)`**  
+  Store a pointer to custom application data. Retrieve it in callbacks using `getCallbackExtra()`.
+
+- **`void* getCallbackExtra()`**  
+  Retrieve the custom application data pointer set with `setCallbackExtra()`.
+
+### Sending Messages
+
+#### Unicast (Single Connection)
+- **`bool sendMessage(uint32_t conn_id, const char* payload)`**  
+  Send a TEXT message. `payload` must be a null-terminated string. Returns `true` on success.
+
+- **`bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size)`**  
+  Send a BINARY message with explicit size. Returns `true` on success.
+
+- **`bool sendPing(uint32_t conn_id, const void* payload = nullptr, size_t payload_size = 0)`**  
+  Send a PING control frame with optional payload (up to 125 bytes per RFC 6455). Client should respond with a PONG frame echoing the payload. Returns `true` on success.
+
+#### Broadcast (All Connections)
+- **`bool broadcastMessage(const char* payload)`**  
+  Send a TEXT message to all connected clients. `payload` must be a null-terminated string. Returns `true` on success.
+
+- **`bool broadcastMessage(const void* payload, size_t payload_size)`**  
+  Send a BINARY message to all connected clients with explicit size. Returns `true` on success.
+
+### Connection Management
+- **`bool close(uint32_t conn_id)`**  
+  Begin graceful shutdown of the specified connection. Messages may still be received on a closing connection, but no further messages can be sent. Returns `true` on success.
+
+### TCP Options
+- **`void setTcpNoDelay(bool enabled)`**  
+  Enable/disable TCP_NODELAY to control Nagle's algorithm. When enabled (`true`), small packets are sent immediately for lower latency. When disabled (`false`, default), the TCP stack may buffer small writes to reduce network overhead.  
+  Call this before `startListening()` or after connections are established.
+
 ## Performance Notes
 No benchmarking has been done, but this server is expected to have a small memory footprint and low response latency. However, there is likely room for performance improvement when it comes to processing large payloads.
 
