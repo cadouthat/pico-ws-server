@@ -9,6 +9,12 @@ Users must also link this library with an implementation of `pico_cyw43_arch` (e
 Warning: the `pico_cyw43_arch` implementation must allow standard library functions (including `malloc`/`free`) to be called from network workers. Since `pico_cyw43_arch_lwip_threadsafe_background` executes workers within ISRs, it is typically not safe unless you have added a critical section
 wrapper around `malloc` and friends.
 
+## Important Usage Warnings
+
+⚠️ **Core Affinity**: All WebSocket server operations (initialization, polling, message sending) must execute on the **same core** where the WiFi/CYW43 driver was initialized. The CYW43 driver maintains core-specific state and is not thread-safe across cores. Violating this requirement will cause undefined behavior, crashes, or data corruption.
+
+⚠️ **Onboard LED**: **Do not use the onboard LED** (`CYW43_WL_GPIO_LED_PIN` / `PICO_DEFAULT_LED_PIN`) while running the WebSocket server. On Pico W boards, the LED is controlled by the CYW43 wireless chip and sharing access with application code can cause WiFi instability, packet loss, or disconnections. Use an external LED on a GPIO pin instead.
+
 ## WebSocket Features
 
 ### PING/PONG Support (RFC 6455)
@@ -36,6 +42,87 @@ cd example/static_html_generator
 ./update_static_html.sh
 ```
 This compresses the HTML with gzip and generates a C header file with the embedded content. The script requires `gzip` and `xxd` to be installed. The script runs on macOS, Linux, and Windows with WSL.
+
+## Quick Start
+
+### Basic Setup Pattern
+**Complete example:** [example/example.cpp](example/example.cpp)
+
+```cpp
+#include "pico_ws_server/web_socket_server.h"
+
+// 1. Define callback functions
+void on_connect(WebSocketServer& server, uint32_t conn_id) {
+  printf("Client connected: %u\n", conn_id);
+}
+
+void on_disconnect(WebSocketServer& server, uint32_t conn_id) {
+  printf("Client disconnected: %u\n", conn_id);
+}
+
+void on_message(WebSocketServer& server, uint32_t conn_id, 
+                const void* data, size_t len) {
+  // Echo the message back
+  server.sendMessage(conn_id, data, len);
+}
+
+int main() {
+  // 2. Create server instance (max 1 connection by default)
+  WebSocketServer server(1);
+  
+  // 3. Register callbacks (all optional, register only what you need)
+  server.setConnectCallback(on_connect);
+  server.setCloseCallback(on_disconnect);
+  server.setMessageCallback(on_message);
+  
+  // 4. Optional: Configure TCP options
+  server.setTcpNoDelay(true);  // Disable Nagle's algorithm for lower latency
+  
+  // 5. Start listening
+  if (!server.startListening(80)) {
+    printf("Failed to start server\n");
+    return 1;
+  }
+  
+  // 6. Main loop - must call cyw43_arch_poll() or popMessages() regularly
+  while (1) {
+    cyw43_arch_poll();  // When using pico_cyw43_arch_lwip_poll
+    // or call server.popMessages() if using threadsafe background
+  }
+}
+```
+**Complete example:** [example/pingpong.cpp](example/pingpong.cpp)
+
+
+### With PING/PONG Liveness Tracking
+```cpp
+void on_pong(WebSocketServer& server, uint32_t conn_id, 
+             const void* data, size_t len) {
+  printf("Received PONG from client %u\n", conn_id);
+  // Reset liveness counters, update last-seen timestamp, etc.
+}
+
+int main() {
+  WebSocketServer server(1);
+  
+  // Register all callbacks including PONG
+  server.setConnectCallback(on_connect);
+  server.setCloseCallback(on_disconnect);
+  server.setMessageCallback(on_message);
+  server.setPongCallback(on_pong);  // Track PONG responses
+  
+  server.startListening(8088);
+  
+  while (1) {
+    cyw43_arch_poll();
+    
+    // Periodically send PING to check client liveness
+    if (should_send_ping()) {
+      server.sendPing(conn_id, nullptr, 0);
+    }
+  }
+}
+```
 
 ## API Reference
 
