@@ -18,6 +18,9 @@ void WebSocketServer::setMessageCallback(MessageCallback cb) {
 void WebSocketServer::setCloseCallback(CloseCallback cb) {
   internal->setCloseCallback(cb);
 }
+void WebSocketServer::setPongCallback(PongCallback cb) {
+  internal->setPongCallback(cb);
+}
 void WebSocketServer::setCallbackExtra(void* arg) {
   callback_extra = arg;
 }
@@ -41,6 +44,9 @@ bool WebSocketServer::sendMessage(uint32_t conn_id, const char* payload) {
 }
 bool WebSocketServer::sendMessage(uint32_t conn_id, const void* payload, size_t payload_size) {
   return internal->sendMessage(conn_id, payload, payload_size);
+}
+bool WebSocketServer::sendPing(uint32_t conn_id, const void* payload, size_t payload_size) {
+  return internal->sendPing(conn_id, payload, payload_size);
 }
 
 bool WebSocketServer::broadcastMessage(const char* payload) {

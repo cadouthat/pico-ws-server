@@ -19,6 +19,7 @@ class WebSocketServerInternal {
   void setConnectCallback(WebSocketServer::ConnectCallback cb) { connect_cb = cb; }
   void setCloseCallback(WebSocketServer::CloseCallback cb) { close_cb = cb; }
   void setMessageCallback(WebSocketServer::MessageCallback cb) { message_cb = cb; }
+  void setPongCallback(WebSocketServer::PongCallback cb) { pong_cb = cb; }
   void setTcpNoDelay(bool enabled) { tcp_nodelay = enabled; }
 
   bool startListening(uint16_t port);
@@ -26,6 +27,7 @@ class WebSocketServerInternal {
 
   bool sendMessage(uint32_t conn_id, const char* payload);
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);
+  bool sendPing(uint32_t conn_id, const void* payload, size_t payload_size);
   bool broadcastMessage(const char* payload);
   bool broadcastMessage(const void* payload, size_t payload_size);
 
@@ -36,6 +38,7 @@ class WebSocketServerInternal {
   void onClose(ClientConnection* connection, bool is_upgraded);
 
   void onMessage(ClientConnection* connection, const void* payload, size_t size);
+  void onPong(ClientConnection* connection, const void* payload, size_t size);
 
  private:
   WebSocketServer& server;
@@ -45,6 +48,7 @@ class WebSocketServerInternal {
   WebSocketServer::ConnectCallback connect_cb = nullptr;
   WebSocketServer::MessageCallback message_cb = nullptr;
   WebSocketServer::CloseCallback close_cb = nullptr;
+  WebSocketServer::PongCallback pong_cb = nullptr;
 
   struct tcp_pcb* listen_pcb = nullptr;
   std::unordered_map<uint32_t, std::unique_ptr<ClientConnection>> connection_by_id;

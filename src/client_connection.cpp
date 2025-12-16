@@ -77,6 +77,10 @@ void ClientConnection::processWebSocketMessage(WebSocketMessage&& message) {
   message_queue.push(std::move(message));
 }
 
+void ClientConnection::processWebSocketPong(const void* payload, size_t size) {
+  server.onPong(this, payload, size);
+}
+
 bool ClientConnection::sendWebSocketTextMessage(const char* payload) {
   if (!http_handler.isUpgraded()) {
     return false;
@@ -95,6 +99,14 @@ bool ClientConnection::sendWebSocketBinaryMessage(const void* payload, size_t si
   }
 
   return ws_handler.sendMessage(WebSocketMessage(WebSocketMessage::BINARY, payload, size));
+}
+
+bool ClientConnection::sendWebSocketPing(const void* payload, size_t size) {
+  if (!http_handler.isUpgraded()) {
+    return false;
+  }
+
+  return ws_handler.sendMessage(WebSocketMessage(WebSocketMessage::PING, payload, size));
 }
 
 bool ClientConnection::sendWebSocketMessage(const char* payload) {
