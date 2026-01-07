@@ -186,12 +186,13 @@ bool HTTPHandler::attemptUpgrade(bool* sent_response) {
     has_ws_version_header ? "has_ws_version_header" : "",
     ws_key_header_value);
   if (!has_upgrade_header && !has_connection_header && !has_ws_version_header) {
-    // Not a WebSocket request, serve static HTML and close connection
+    // Not a WebSocket request, serve static HTML
     if (!sendHTML()) {
       DEBUG("failed to send HTML response");
     }
     *sent_response = true;
-    return false;
+    // Return true if still sending chunks to keep connection alive
+    return serving_static_html;
   }
 
   if (!has_upgrade_header || !has_connection_header || !has_ws_version_header) {
@@ -288,9 +289,14 @@ bool HTTPHandler::process(char c, bool *sent_response) {
     if (c != '\n') {
       return false;
     }
-    if (!current_header[0]) {
-      is_upgraded = attemptUpgrade(sent_response);
-      return is_upgraded;
+      if (!current_header[0]) {
+      // attemptUpgrade returns true for WebSocket OR if still sending chunked HTML
+      bool keep_alive = attemptUpgrade(sent_response);
+      // Only set is_upgraded for actual WebSocket upgrades (not chunked HTML)
+      if (keep_alive && !serving_static_html) {
+        is_upgraded = true;
+      }
+      return keep_alive;
     }
     bool ok = processHeader(current_header);
     current_part = HEADER;
