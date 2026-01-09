@@ -196,6 +196,21 @@ void WebSocketServerInternal::popMessages() {
   }
 }
 
+bool WebSocketServerInternal::sendPing(uint32_t conn_id, const void* payload, size_t payload_size) {
+  Cyw43Guard guard;
+
+  ClientConnection* connection = getConnectionById(conn_id);
+  if (!connection) {
+    DEBUG("connection not found");
+    return false;
+  }
+
+  // Per RFC 6455, control frames max payload is 125 bytes; enforcement left to caller.
+  bool result = connection->sendWebSocketPing(payload, payload_size);
+
+  return result;
+}
+
 bool WebSocketServerInternal::sendMessage(uint32_t conn_id, const char* payload) {
   Cyw43Guard guard;
 
@@ -317,6 +332,14 @@ void WebSocketServerInternal::onMessage(ClientConnection* connection, const void
 
   if (message_cb) {
     message_cb(server, getConnectionId(connection), payload, size);
+  }
+}
+
+void WebSocketServerInternal::onPong(ClientConnection* connection, const void* payload, size_t size) {
+  cyw43_arch_lwip_check();
+
+  if (pong_cb) {
+    pong_cb(server, getConnectionId(connection), payload, size);
   }
 }
 

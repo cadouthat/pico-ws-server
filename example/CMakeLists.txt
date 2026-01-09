@@ -20,9 +20,20 @@ add_executable(example
   example.cpp
 )
 
+add_executable(pingpong
+  pingpong.cpp
+)
+
 pico_enable_stdio_usb(example 1)
+pico_enable_stdio_usb(pingpong 1)
 
 target_link_libraries(example
+  pico_stdlib
+  pico_cyw43_arch_lwip_poll
+  pico_ws_server
+)
+
+target_link_libraries(pingpong
   pico_stdlib
   pico_cyw43_arch_lwip_poll
   pico_ws_server
@@ -33,4 +44,10 @@ target_compile_definitions(example PRIVATE
   WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
   )
 
+target_compile_definitions(pingpong PRIVATE
+  WIFI_SSID=\"${WIFI_SSID}\"
+  WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+  )
+
 pico_add_extra_outputs(example)
+pico_add_extra_outputs(pingpong)

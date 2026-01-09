@@ -46,7 +46,12 @@ bool WebSocketHandler::processMessage(WebSocketMessage&& message) {
 
   case WebSocketMessage::PING:
     DEBUG("PING requested");
-    return sendMessage(message);
+    return sendMessage(WebSocketMessage(WebSocketMessage::PONG, message.getPayload(), message.getPayloadSize()));
+
+  case WebSocketMessage::PONG:
+    DEBUG("PONG received");
+    connection.processWebSocketPong(message.getPayload(), message.getPayloadSize());
+    return true;
 
   default:
     // Ignore unknown message types

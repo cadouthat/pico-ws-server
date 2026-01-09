@@ -24,9 +24,11 @@ class ClientConnection {
   bool isClosing();
 
   void processWebSocketMessage(WebSocketMessage&& message);
+  void processWebSocketPong(const void* payload, size_t size);
 
   bool sendWebSocketTextMessage(const char* payload);
   bool sendWebSocketBinaryMessage(const void* payload, size_t size);
+  bool sendWebSocketPing(const void* payload, size_t size);
 
   bool sendWebSocketMessage(const char* payload);
   bool sendWebSocketMessage(const void* payload, size_t size);

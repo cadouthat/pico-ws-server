@@ -14,6 +14,7 @@ class WebSocketServer {
   // Note: data can be treated as a null-terminated string if expecting TEXT messages (an extra NULL byte is allocated)
   typedef void (*MessageCallback)(WebSocketServer& server, uint32_t conn_id, const void *data, size_t len);
   typedef void (*CloseCallback)(WebSocketServer& server, uint32_t conn_id);
+  typedef void (*PongCallback)(WebSocketServer& server, uint32_t conn_id, const void *data, size_t len);
 
   WebSocketServer(uint32_t max_connections = 1);
   ~WebSocketServer();
@@ -25,6 +26,8 @@ class WebSocketServer {
   // Note: unlike connect/close, the message callback will not be called from an ISR, but still holds
   // the cyw43 context lock
   void setMessageCallback(MessageCallback cb);
+  // PONG callback runs in the same context as message callback (cyw43 lock held, not ISR)
+  void setPongCallback(PongCallback cb);
   void setCallbackExtra(void* arg);
   void* getCallbackExtra();
 
@@ -41,6 +44,8 @@ class WebSocketServer {
   bool sendMessage(uint32_t conn_id, const char* payload);
   // Send a BINARY message
   bool sendMessage(uint32_t conn_id, const void* payload, size_t payload_size);
+  // Send a PING control frame, optional payload echoed back in PONG (up to 125 bytes per RFC)
+  bool sendPing(uint32_t conn_id, const void* payload = nullptr, size_t payload_size = 0);
 
   // Send a TEXT message to all connections, payload must be a null-terminated string
   bool broadcastMessage(const char* payload);
