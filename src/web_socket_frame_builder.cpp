@@ -134,7 +134,12 @@ bool WebSocketFrameBuilder::process(uint8_t byte) {
     frame = std::make_unique<WebSocketFrame>(getOpcode(header), isFinal(header), payload_size);
   }
 
-  if (!consumed) {
+  // Only append byte to payload if:
+  // 1. The byte wasn't consumed by header parsing
+  // 2. The frame actually has a payload (payload_size > 0)
+  // Without the payload_size check, 0-length frames (like CLOSE) would incorrectly
+  // append the first byte of the next frame to their payload
+  if (!consumed && payload_size > 0) {
     frame->append(byte);
     consumed = true;
   }
